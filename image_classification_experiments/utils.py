@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import os
 import json
@@ -9,6 +8,10 @@ from image_classification_experiments.resnet_models import *
 
 
 class Counter:
+    """
+    A counter to track number of updates.
+    """
+
     def __init__(self):
         self.count = 0
 
@@ -102,34 +105,6 @@ def safe_load_dict(model, new_model_state, should_resume_all_params=False):
         raise AssertionError('No previous ckpt names matched and the ckpt was not loaded properly.')
 
 
-def save_model(model, optimizer, ckpt_path):
-    if '/' in ckpt_path:
-        ckpt_dir = '/'.join(ckpt_path.split('/')[:-1])
-        if not os.path.exists(ckpt_dir):
-            os.makedirs(ckpt_dir)
-
-    state = {
-        'state_dict': model.state_dict(),
-        'optimizer_state': optimizer.state_dict()
-    }
-    torch.save(state, ckpt_path)
-
-
-def randint(max_val, num_samples):
-    rand_vals = {}
-    _num_samples = min(max_val, num_samples)
-    while True:
-        _rand_vals = np.random.randint(0, max_val, num_samples)
-        for r in _rand_vals:
-            rand_vals[r] = r
-            if len(rand_vals) >= _num_samples:
-                break
-
-        if len(rand_vals) >= _num_samples:
-            break
-    return rand_vals.keys()
-
-
 def build_classifier(classifier, classifier_ckpt, num_classes):
     classifier = eval(classifier)(num_classes=num_classes)
 
@@ -144,37 +119,6 @@ def build_classifier(classifier, classifier_ckpt, num_classes):
         print("Resuming with {}".format(classifier_ckpt))
         safe_load_dict(classifier, resumed[state_dict_key], should_resume_all_params=True)
     return classifier
-
-
-class RehearsalBatchSampler(torch.utils.data.Sampler):
-    """
-    A sampler that returns a generator obj30216ect which randomly samples from a list, that holds the indices that are
-    eligible for rehearsal.
-    The samples that are eligible for rehearsal grows over time, so we want it to be a 'generator' object and not an
-    iterator object.
-    """
-
-    # See: https://github.com/pytorch/pytorch/issues/683
-    def __init__(self, rehearsal_ixs, num_rehearsal_samples):
-        # This makes sure that different workers have different randomness and don't end up returning the same data
-        # item!
-        self.rehearsal_ixs = rehearsal_ixs  # These are the samples which can be replayed. This list can grow over time.
-
-        np.random.seed(os.getpid())
-        self.num_rehearsal_samples = num_rehearsal_samples
-
-    def __iter__(self):
-        # We are returning a generator instead of an iterator, because the data points we want to sample from, differs
-        # every time we loop through the data.
-        # e.g., if we are seeing 100th sample, we may want to do a replay by sampling from 0-99 samples. But then,
-        # when we see 101th sample, we want to replay from 0-100 samples instead of 0-99.
-        while True:
-            ix = randint(len(self.rehearsal_ixs), self.num_rehearsal_samples)
-            yield np.array([self.rehearsal_ixs[_curr_ix] for _curr_ix in ix])
-
-    def __len__(self):
-        return 2 ** 64  # Returning a very large number because we do not want it to stop replaying.
-        # The stop criteria must be defined in some other manner.
 
 
 class RandomResizeCrop(object):

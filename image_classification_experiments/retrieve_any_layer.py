@@ -1,6 +1,6 @@
-from torchvision.models.resnet import resnet18
 import torch
 import torch.nn as nn
+from torchvision.models.resnet import resnet18
 
 
 def get_name_to_module(model):
@@ -49,7 +49,6 @@ class ModelWrapper(nn.Module):
 
 
 def test_resnet18():
-    output = {}
     output_layer_names = ['layer1.0.bn1', 'layer4.0', 'fc']
     in_tensor = torch.ones((2, 3, 224, 224))
 
