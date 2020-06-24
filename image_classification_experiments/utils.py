@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import os
-import torch.nn as nn
 import json
 import random
 import math
@@ -64,12 +63,13 @@ def save_predictions(y_pred, min_class_trained, max_class_trained, save_path, su
     torch.save(y_pred, save_path + '/' + name + '.pt')
 
 
-def save_accuracies(accuracies, min_class_trained, max_class_trained, save_path,suffix='', order=None):
+def save_accuracies(accuracies, min_class_trained, max_class_trained, save_path, suffix='', order=None):
     if order is not None:
         name = 'core50_' + order + '_accuracies_min_trained_' + str(min_class_trained) + '_max_trained_' + str(
             max_class_trained) + '.json'
     else:
-        name = 'accuracies_min_trained_' + str(min_class_trained) + '_max_trained_' + str(max_class_trained) + suffix+'.json'
+        name = 'accuracies_min_trained_' + str(min_class_trained) + '_max_trained_' + str(
+            max_class_trained) + suffix + '.json'
     json.dump(accuracies, open(os.path.join(save_path, name), 'w'))
 
 

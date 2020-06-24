@@ -7,6 +7,7 @@ import torch.nn.functional as F
 import image_classification_experiments.utils as utils
 from image_classification_experiments.retrieve_any_layer import ModelWrapper
 import sys
+import random
 from image_classification_experiments.utils import RandomResizeCrop
 
 sys.setrecursionlimit(10000)
@@ -34,7 +35,7 @@ class REMINDModel(object):
                  classifier_F='ResNet18_StartAt_Layer4_1', classifier_ckpt=None,
                  weight_decay=1e-5, lr_mode=None, lr_step_size=100, start_lr=0.1, end_lr=0.001, lr_gamma=0.5,
                  num_samples=50, use_mixup=False, mixup_alpha=0.2, grad_clip=None, num_channels=512, num_feats=7,
-                 num_codebooks=32, use_random_resize_crops=True):
+                 num_codebooks=32, use_random_resize_crops=True, max_buffer_size=None):
 
         # make the classifier
         self.classifier_F = utils.build_classifier(classifier_F, classifier_ckpt, num_classes=num_classes)
@@ -69,6 +70,7 @@ class REMINDModel(object):
         self.num_codebooks = num_codebooks
         self.use_random_resize_crops = use_random_resize_crops
         self.random_resize_crop = utils.RandomResizeCrop(7, scale=(2 / 7, 1.0))
+        self.max_buffer_size = max_buffer_size
 
     def get_trainable_params(self, classifier, start_lr):
         trainable_params = []
@@ -76,8 +78,8 @@ class REMINDModel(object):
             trainable_params.append({'params': v, 'lr': start_lr})
         return trainable_params
 
-    def fit_incremental_batch(self, curr_loader, latent_dict, pq, rehearsal_ixs=None, verbose=True,
-                              counter=utils.Counter()):
+    def fit_incremental_batch(self, curr_loader, latent_dict, pq, rehearsal_ixs=None, class_id_to_item_ix_dict=None,
+                              verbose=True, counter=utils.Counter()):
         ongoing_class = None
         classifier_F = self.classifier_F.cuda()
         classifier_F.train()
@@ -190,7 +192,6 @@ class REMINDModel(object):
 
                     output = classifier_F(data_batch_reconstructed)
                     loss = criterion(output, data_labels)
-                counter.update()
 
                 loss = loss.mean()
                 self.optimizer.zero_grad()  # zero out grads before backward pass because they are accumulated
@@ -207,6 +208,21 @@ class REMINDModel(object):
                 # since we have visited item_ix, it is now eligible for replay
                 rehearsal_ixs.append(int(item_ix.numpy()))
                 latent_dict[int(item_ix.numpy())] = [x, y.numpy()]
+                class_id_to_item_ix_dict[int(y.numpy())].append(int(item_ix.numpy()))
+
+                # if buffer is full, randomly replace previous example from class with most samples
+                if self.max_buffer_size is not None and counter.count >= self.max_buffer_size:
+                    # class with most samples and random item_ix from it
+                    max_key = max(class_id_to_item_ix_dict, key=lambda x: len(class_id_to_item_ix_dict[x]))
+                    max_class_list = class_id_to_item_ix_dict[max_key]
+                    rand_item_ix = random.choice(max_class_list)
+
+                    # remove the random_item_ix from all buffer references
+                    max_class_list.remove(rand_item_ix)
+                    latent_dict.pop(rand_item_ix)
+                    rehearsal_ixs.remove(rand_item_ix)
+                else:
+                    counter.update()
 
                 if self.lr_scheduler_per_class is not None:
                     self.lr_scheduler_per_class[int(y)].step()

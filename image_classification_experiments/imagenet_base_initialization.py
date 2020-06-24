@@ -1,8 +1,10 @@
 import numpy as np
 import image_classification_experiments.utils_imagenet as utils_imagenet
+import image_classification_experiments.utils as utils
 from image_classification_experiments.retrieve_any_layer import ModelWrapper
 from image_classification_experiments.utils import build_classifier
 import time
+from collections import defaultdict
 import faiss
 
 
@@ -48,7 +50,7 @@ def extract_base_init_features(imagenet_path, label_dir, extract_features_from, 
 
 
 def fit_pq(feats_base_init, labels_base_init, item_ix_base_init, num_channels, num_feats, num_codebooks, codebook_size,
-           batch_size=128):
+           batch_size=128, counter=utils.Counter()):
     train_data_base_init = np.transpose(feats_base_init, (0, 2, 3, 1))
     train_data_base_init = np.reshape(train_data_base_init, (-1, num_channels))
     num_samples = len(train_data_base_init)
@@ -64,6 +66,7 @@ def fit_pq(feats_base_init, labels_base_init, item_ix_base_init, num_channels, n
     print('Encoding, Decoding, and Storing Base Init Codes')
     start = time.time()
     latent_dict = {}
+    class_id_to_item_ix_dict = defaultdict(list)
     rehearsal_ixs = []
     mb = min(batch_size, num_samples)
     for i in range(0, num_samples, mb):
@@ -83,8 +86,11 @@ def fit_pq(feats_base_init, labels_base_init, item_ix_base_init, num_channels, n
             ix = int(batch_item_ixs[j])
             latent_dict[ix] = [codes[j], batch_labels[j]]
             rehearsal_ixs.append(ix)
+            class_id_to_item_ix_dict[int(batch_labels[j])].append(ix)
+            counter.update()
+
     print("Completed in {} secs".format(time.time() - start))
-    return pq, latent_dict, rehearsal_ixs
+    return pq, latent_dict, rehearsal_ixs, class_id_to_item_ix_dict
 
 
 if __name__ == '__main__':
@@ -104,5 +110,6 @@ if __name__ == '__main__':
                                                                      ckpt_dir + '/' + ckpt_file,
                                                                      arch, max_class, num_channels,
                                                                      num_feats)
-    pq, latent_dict, rehearsal_ixs = fit_pq(feat_data, label_data, item_ix_data, num_channels, num_feats, num_codebooks,
-                                            codebook_size)
+    pq, latent_dict, rehearsal_ixs, class_id_to_item_ix_dict = fit_pq(feat_data, label_data, item_ix_data, num_channels,
+                                                                      num_feats, num_codebooks,
+                                                                      codebook_size)
