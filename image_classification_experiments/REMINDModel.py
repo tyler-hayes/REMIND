@@ -8,7 +8,10 @@ import image_classification_experiments.utils as utils
 from image_classification_experiments.retrieve_any_layer import ModelWrapper
 import sys
 import random
-from image_classification_experiments.utils import RandomResizeCrop
+import json
+import os
+import faiss
+import pickle
 
 sys.setrecursionlimit(10000)
 
@@ -35,7 +38,7 @@ class REMINDModel(object):
                  classifier_F='ResNet18_StartAt_Layer4_1', classifier_ckpt=None,
                  weight_decay=1e-5, lr_mode=None, lr_step_size=100, start_lr=0.1, end_lr=0.001, lr_gamma=0.5,
                  num_samples=50, use_mixup=False, mixup_alpha=0.2, grad_clip=None, num_channels=512, num_feats=7,
-                 num_codebooks=32, use_random_resize_crops=True, max_buffer_size=None):
+                 num_codebooks=32, codebook_size=256, use_random_resize_crops=True, max_buffer_size=None):
 
         # make the classifier
         self.classifier_F = utils.build_classifier(classifier_F, classifier_ckpt, num_classes=num_classes)
@@ -68,6 +71,7 @@ class REMINDModel(object):
         self.num_channels = num_channels
         self.num_feats = num_feats
         self.num_codebooks = num_codebooks
+        self.codebook_size = codebook_size
         self.use_random_resize_crops = use_random_resize_crops
         self.random_resize_crop = utils.RandomResizeCrop(7, scale=(2 / 7, 1.0))
         self.max_buffer_size = max_buffer_size
@@ -275,3 +279,37 @@ class REMINDModel(object):
             preds = probas.data.max(1)[1]
 
         return preds.numpy(), probas.numpy(), all_lbls.int().numpy()
+
+    def save(self, inc, save_full_path, rehearsal_ixs, latent_dict, class_id_to_item_ix_dict, pq):
+
+        if not os.path.exists(save_full_path):
+            os.makedirs(save_full_path)
+
+        state = {
+            'model_state_dict': self.classifier_F.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict()
+        }
+        print(f'\nSaving to {save_full_path}')
+        torch.save(state, os.path.join(save_full_path, 'remind_classifier_F_%d.pth' % inc))
+
+        centroids = faiss.vector_to_array(pq.centroids).reshape(pq.M, pq.ksub, pq.dsub)
+
+        d = {'latent_dict': latent_dict, 'rehearsal_ixs': rehearsal_ixs,
+             'class_id_to_item_ix_dict': class_id_to_item_ix_dict, 'pq_centroids': centroids}
+
+        with open(os.path.join(save_full_path, 'remind_buffer_%d.pkl' % inc), 'wb') as f:
+            pickle.dump(d, f)
+
+    def resume(self, inc, resume_full_path):
+        print(f'\nResuming from {resume_full_path}')
+        state = torch.load(os.path.join(resume_full_path, 'remind_classifier_F_%d.pth' % inc))
+        self.classifier_F.load_state_dict(state['model_state_dict'])
+        self.optimizer.load_state_dict(state['optimizer_state_dict'])
+
+        # copy parameters in
+        with open(os.path.join(resume_full_path, 'remind_buffer_%d.pkl' % inc), 'rb') as f:
+            d = pickle.load(f)
+        nbits = int(np.log2(self.codebook_size))
+        pq = faiss.ProductQuantizer(self.num_channels, self.num_codebooks, nbits)
+        faiss.copy_array_to_vector(d['pq_centroids'].ravel(), pq.centroids)
+        return state, d['latent_dict'], d['rehearsal_ixs'], d['class_id_to_item_ix_dict'], pq

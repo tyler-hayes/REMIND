@@ -69,29 +69,41 @@ def streaming(args, remind):
                   'base_classes_top5': [], 'non_base_classes_top5': [], 'seen_classes_top5': []}
 
     counter = utils.Counter()
-    print('\nPerforming base initialization...')
-    feat_data, label_data, item_ix_data = extract_base_init_features(args.images_dir, args.label_dir,
-                                                                     args.extract_features_from,
-                                                                     args.classifier_ckpt,
-                                                                     args.base_arch, args.initial_max_class,
-                                                                     args.num_channels,
-                                                                     args.spatial_feat_dim)
-    pq, latent_dict, rehearsal_ixs, class_id_to_item_ix_dict = fit_pq(feat_data, label_data, item_ix_data,
-                                                                      args.num_channels,
-                                                                      args.spatial_feat_dim, args.num_codebooks,
-                                                                      args.codebook_size, counter=counter)
 
-    initial_test_loader = get_data_loader(args, split='val', min_class=args.initial_min_class,
-                                          max_class=args.initial_max_class)
-    print('\nComputing base accuracies...')
-    base_probas, base_top1, base_top5 = compute_accuracies(initial_test_loader, remind, pq)
+    if args.resume_full_path is not None:
+        # load in previous model to continue training
+        state, latent_dict, rehearsal_ixs, class_id_to_item_ix_dict, pq = remind.resume(args.streaming_min_class,
+                                                                                        args.resume_full_path)
 
-    print('\nInitial Test: top1=%0.2f%% -- top5=%0.2f%%' % (base_top1, base_top5))
-    utils.save_predictions(base_probas, args.initial_min_class, args.initial_max_class - 1, args.save_dir)
-    accuracies['base_classes_top1'].append(float(base_top1))
-    accuracies['base_classes_top5'].append(float(base_top5))
-    accuracies['seen_classes_top1'].append(float(base_top1))
-    accuracies['seen_classes_top5'].append(float(base_top5))
+        # validate performance from previous increment
+        print('Previous model loaded...computing previous accuracy as sanity check...')
+        test_loader = get_data_loader(args, 'val', args.min_class, args.streaming_min_class, batch_size=args.batch_size)
+        _, probas, y_test = remind.predict(test_loader, pq)
+        update_accuracies(args, curr_max_class=args.streaming_min_class, remind=remind, pq=pq, accuracies=accuracies)
+    else:
+        print('\nPerforming base initialization...')
+        feat_data, label_data, item_ix_data = extract_base_init_features(args.images_dir, args.label_dir,
+                                                                         args.extract_features_from,
+                                                                         args.classifier_ckpt,
+                                                                         args.base_arch, args.initial_max_class,
+                                                                         args.num_channels,
+                                                                         args.spatial_feat_dim)
+        pq, latent_dict, rehearsal_ixs, class_id_to_item_ix_dict = fit_pq(feat_data, label_data, item_ix_data,
+                                                                          args.num_channels,
+                                                                          args.spatial_feat_dim, args.num_codebooks,
+                                                                          args.codebook_size, counter=counter)
+
+        initial_test_loader = get_data_loader(args, split='val', min_class=args.initial_min_class,
+                                              max_class=args.initial_max_class)
+        print('\nComputing base accuracies...')
+        base_probas, base_top1, base_top5 = compute_accuracies(initial_test_loader, remind, pq)
+
+        print('\nInitial Test: top1=%0.2f%% -- top5=%0.2f%%' % (base_top1, base_top5))
+        utils.save_predictions(base_probas, args.initial_min_class, args.initial_max_class - 1, args.save_dir)
+        accuracies['base_classes_top1'].append(float(base_top1))
+        accuracies['base_classes_top5'].append(float(base_top5))
+        accuracies['seen_classes_top1'].append(float(base_top1))
+        accuracies['seen_classes_top5'].append(float(base_top5))
 
     print('\nBeginning streaming training...')
     for class_ix in range(args.streaming_min_class, args.streaming_max_class, args.class_increment):
@@ -105,6 +117,11 @@ def streaming(args, remind):
                                      class_id_to_item_ix_dict=class_id_to_item_ix_dict,
                                      counter=counter)
 
+        # save remind model out
+        save_full_path = os.path.join(args.save_dir, 'remind_model/')
+        remind.save(max_class, save_full_path, rehearsal_ixs, latent_dict, class_id_to_item_ix_dict, pq)
+
+        # perform inference
         _, probas, y_test = remind.predict(test_loader, pq)
         update_accuracies(args, curr_max_class=max_class, remind=remind, pq=pq, accuracies=accuracies)
 
@@ -161,6 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_codebooks', type=int, default=32)
     parser.add_argument('--codebook_size', type=int, default=256)
     parser.add_argument('--max_buffer_size', type=int, default=None)
+    parser.add_argument('--resume_full_path', type=str, default=None)
 
     # learning rate parameters
     parser.add_argument('--lr_mode', type=str, choices=['step_lr_per_class'])
@@ -202,6 +220,7 @@ if __name__ == '__main__':
                          start_lr=args.start_lr, end_lr=args.end_lr, lr_gamma=args.lr_gamma,
                          num_samples=args.rehearsal_samples, use_mixup=args.use_mixup, mixup_alpha=args.mixup_alpha,
                          grad_clip=None, num_channels=args.num_channels, num_feats=args.spatial_feat_dim,
-                         num_codebooks=args.num_codebooks, use_random_resize_crops=args.random_resized_crops,
+                         num_codebooks=args.num_codebooks, codebook_size=args.codebook_size,
+                         use_random_resize_crops=args.random_resized_crops,
                          max_buffer_size=args.max_buffer_size)
     streaming(args, remind)
