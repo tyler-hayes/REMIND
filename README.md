@@ -2,7 +2,7 @@ REMIND
 =====================================
 This is a PyTorch implementation of the REMIND algorithm from our paper. An [arXiv pre-print](https://arxiv.org/abs/1910.02509) of our paper is available.
 
-## Dependences 
+## Dependencies 
 - Tested with Python 3.7.6 and PyTorch 1.3.1, torchvision 0.4.2, NumPy, FAISS, NVIDIA GPU
 
 ## Setup ImageNet-2012
@@ -27,12 +27,14 @@ The ImageNet Large Scale Visual Recognition Challenge (ILSVRC) dataset has 1000 
 ## Installing FAISS
 [See link.](https://github.com/facebookresearch/faiss/blob/master/INSTALL.md)
 # CPU version only
-conda install faiss-cpu -c pytorch
+```conda install faiss-cpu -c pytorch```
 
 # GPU version
+```
 conda install faiss-gpu cudatoolkit=8.0 -c pytorch # For CUDA8
 conda install faiss-gpu cudatoolkit=9.0 -c pytorch # For CUDA9
 conda install faiss-gpu cudatoolkit=10.0 -c pytorch # For CUDA10
+```
 
 ## Citation
 If using this code, please cite our paper.
