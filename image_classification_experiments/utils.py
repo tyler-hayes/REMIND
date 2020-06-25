@@ -63,7 +63,7 @@ def save_predictions(y_pred, min_class_trained, max_class_trained, save_path, su
             max_class_trained)
     else:
         name = 'preds_min_trained_' + str(min_class_trained) + '_max_trained_' + str(max_class_trained) + suffix
-    torch.save(y_pred, save_path + '/' + name + '.pt')
+    torch.save(y_pred, save_path + '/' + name + '.pth')
 
 
 def save_accuracies(accuracies, min_class_trained, max_class_trained, save_path, suffix='', order=None):
