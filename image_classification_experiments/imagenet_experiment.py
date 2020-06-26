@@ -164,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--end_lr', type=float, default=0.001)  # ending lr for class
 
     # augmentation parameters
-    parser.add_argument('--random_resized_crops', action='store_true')
+    parser.add_argument('--use_random_resized_crops', action='store_true')
     parser.add_argument('--use_mixup', action='store_true')
     parser.add_argument('--mixup_alpha', type=float, default=0.1)
 
@@ -198,6 +198,6 @@ if __name__ == '__main__':
                          num_samples=args.rehearsal_samples, use_mixup=args.use_mixup, mixup_alpha=args.mixup_alpha,
                          grad_clip=None, num_channels=args.num_channels, num_feats=args.spatial_feat_dim,
                          num_codebooks=args.num_codebooks, codebook_size=args.codebook_size,
-                         use_random_resize_crops=args.random_resized_crops,
+                         use_random_resize_crops=args.use_random_resized_crops,
                          max_buffer_size=args.max_buffer_size)
     streaming(args, remind)

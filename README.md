@@ -9,23 +9,22 @@ Formally, REMIND takes an input image and passes it through frozen layers of a n
 ![REMIND](./repo_images/REMIND_model.png)
 
 ## Dependencies 
-- Python >= 3.7.7
-- PyTorch >= 1.3.1
-- torchvision >= 0.4.2
-- FAISS (installation instructions below)
-- NumPy
+We have tested the code with the following packages and versions:
+- Python 3.7.6
+- PyTorch (GPU) 1.3.1
+- torchvision 0.4.2
+- NumPy 1.18.5
+- FAISS (CPU) 1.5.2
+- CUDA 10.1 (also works with CUDA 10.0)
 - NVIDIA GPU
-  
-## Installing FAISS
-We use the Product Quantization (PQ) implementation from the FAISS library. [See link.](https://github.com/facebookresearch/faiss/blob/master/INSTALL.md)
-#### CPU version only
-```conda install faiss-cpu -c pytorch```
 
-#### GPU version
+We recommend setting up a `conda` environment with these same package versions:
 ```
-conda install faiss-gpu cudatoolkit=8.0 -c pytorch # For CUDA8
-conda install faiss-gpu cudatoolkit=9.0 -c pytorch # For CUDA9
-conda install faiss-gpu cudatoolkit=10.0 -c pytorch # For CUDA10
+conda create -n remind_proj python=3.7
+conda activate remind_proj
+conda install numpy=1.18.5
+conda install pytorch=1.3.1 torchvision=0.4.2 cudatoolkit=10.1 -c pytorch
+conda install faiss-cpu=1.5.2 -c pytorch
 ```
 
 ## Setup ImageNet-2012
@@ -71,25 +70,25 @@ The ImageNet Large Scale Visual Recognition Challenge (ILSVRC) dataset has 1000 
 ## Training REMIND on ImageNet (Classification)
 We have provided the necessary files to train REMIND on the exact same ImageNet ordering used in our paper (provided in `imagenet_class_order.txt`). We also provide steps for running REMIND on an alternative ordering.
 
-##### To train REMIND on the ImageNet ordering from our paper, follow the steps below:
+#### To train REMIND on the ImageNet ordering from our paper, follow the steps below:
 
 1. Run `run_imagenet_experiment.sh` to train REMIND on the ordering from our paper. Note, this will use our ordering and associated files provided in `imagenet_files`.
 
-##### To train REMIND on a different ImageNet ordering, follow the steps below:
+#### To train REMIND on a different ImageNet ordering, follow the steps below:
 
 1. Generate a text file containing one class name per line in the desired order.
 2. Run `make_numpy_imagenet_label_files.py` to generate the necessary numpy files for the desired ordering using the text file from step 1.
 3. Run `train_base_init_network.sh` to train an offline model using the desired ordering and label files generated in step 2 on the base init data.
 4. Run `run_imagenet_experiment.sh` using the label files from step 2 and the ckpt file from step 3 to train REMIND on the desired ordering.
 
-##### Files generated from the streaming experiment:
+#### Files generated from the streaming experiment:
 
 - `*.json` files containing incremental top-1 and top-5 accuracies
 - `*.pth` files containing incremental model predictions/probabilities
 - `*.pth` files containing incremental REMIND classifier (F) weights
 - `*.pkl` files containing PQ centroids and incremental buffer data (e.g., latent codes)
 
-##### To continue training REMIND from a previous ckpt:
+#### To continue training REMIND from a previous ckpt:
 We save out incremental weights and associated data for REMIND after each evaluation cycle. This enables REMIND to continue training from these saved files (in case of a computer crash etc.). This can be done as follows in `run_imagenet_experiment.sh`:
 
 1. Set the `--resume_full_path` argument to the path where the previous REMIND model was saved.
