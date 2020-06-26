@@ -49,7 +49,7 @@ def update_accuracies(args, curr_max_class, remind, pq, accuracies):
 
     utils.save_accuracies(accuracies, min_class_trained=args.min_class, max_class_trained=curr_max_class,
                           save_path=args.save_dir)
-    utils.save_predictions(seen_probas, args.min_class, curr_max_class - 1, args.save_dir)
+    utils.save_predictions(seen_probas, args.min_class, curr_max_class, args.save_dir)
 
 
 def streaming(args, remind):
