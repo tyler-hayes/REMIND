@@ -1,6 +1,6 @@
 REMIND Your Neural Network to Prevent Catastrophic Forgetting
 =====================================
-This is a PyTorch implementation of the REMIND algorithm from our paper. An [arXiv pre-print](https://arxiv.org/abs/1910.02509) of our paper is available.
+This is a PyTorch implementation of the REMIND algorithm from our ECCV-2020 paper. An [arXiv pre-print](https://arxiv.org/abs/1910.02509) of our paper is available.
 
 REMIND (REplay using Memory INDexing) is a novel brain-inspired streaming learning model that uses tensor quantization to efficiently store hidden representations (e.g., CNN feature maps) for later replay. REMIND implements this compression using Product Quantization (PQ) and outperforms existing models on the ImageNet and CORe50 classification datasets. Further, we demonstrate REMIND's robustness by pioneering streaming Visual Question Answering (VQA), in which an agent must answer questions about images.
 
@@ -101,10 +101,10 @@ We save out incremental weights and associated data for REMIND after each evalua
 ## Citation
 If using this code, please cite our paper.
 ```
-@article{hayes2019remind,
+@inproceedings{hayes2020remind,
   title={REMIND Your Neural Network to Prevent Catastrophic Forgetting},
   author={Hayes, Tyler L and Kafle, Kushal and Shrestha, Robik and Acharya, Manoj and Kanan, Christopher},
-  journal={arXiv preprint arXiv:1910.02509},
-  year={2019}
+  booktitle={Proceedings of the European Conference on Computer Vision (ECCV)},
+  year={2020}
 }
 ```
