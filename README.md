@@ -16,7 +16,10 @@ We have tested the code with the following packages and versions:
 - NumPy 1.18.5
 - FAISS (CPU) 1.5.2
 - CUDA 10.1 (also works with CUDA 10.0)
+- Scikit-Learn 0.23.1
+- Scipy 1.1.0
 - NVIDIA GPU
+
 
 We recommend setting up a `conda` environment with these same package versions:
 ```
@@ -33,18 +36,19 @@ The ImageNet Large Scale Visual Recognition Challenge (ILSVRC) dataset has 1000 
 1. Download the images from http://image-net.org/download-images
 
 2. Extract the training data:
-  ```bash
-  mkdir train && mv ILSVRC2012_img_train.tar train/ && cd train
-  tar -xvf ILSVRC2012_img_train.tar && rm -f ILSVRC2012_img_train.tar
-  find . -name "*.tar" | while read NAME ; do mkdir -p "${NAME%.tar}"; tar -xvf "${NAME}" -C "${NAME%.tar}"; rm -f "${NAME}"; done
-  cd ..
-  ```
+    ```bash
+    mkdir train && mv ILSVRC2012_img_train.tar train/ && cd train
+    tar -xvf ILSVRC2012_img_train.tar && rm -f ILSVRC2012_img_train.tar
+    find . -name "*.tar" | while read NAME ; do mkdir -p "${NAME%.tar}"; tar -xvf "${NAME}" -C "${NAME%.tar}"; rm -f "${NAME}"; done
+    cd ..
+    ```
 
 3. Extract the validation data and move images to subfolders:
-  ```bash
-  mkdir val && mv ILSVRC2012_img_val.tar val/ && cd val && tar -xvf ILSVRC2012_img_val.tar
-  wget -qO- https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh | bash
-  ```
+    ```bash
+    mkdir val && mv ILSVRC2012_img_val.tar val/ && cd val && tar -xvf ILSVRC2012_img_val.tar
+    wget -qO- https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh | bash
+    ```
+
 
 ## Repo Structure & Descriptions
 
@@ -96,7 +100,37 @@ We save out incremental weights and associated data for REMIND after each evalua
 3. Run `run_imagenet_experiment.sh`
 
 ## Training REMIND on VQA Datasets
-#### Coming Soon!
+### Training REMIND on CLEVR 
+_Note: For convenience, we pre-extract all the features including the PQ encoded features. This requires 140 GB of free space._
+1. Download and extract CLEVR images+annotations:
+    ```bash
+    wget https://dl.fbaipublicfiles.com/clevr/CLEVR_v1.0.zip
+    unzip CLEVR_v1.0.zip
+    ```
+   
+2. Extract question features
+    - Clone the gensen repository and download glove features:
+    ```
+    cd ${GENSENPATH} 
+    git clone git@github.com:erobic/gensen.git
+    cd ${GENSENPATH}/data/embedding
+    chmod +x glove25.sh && ./glove2h5.sh    
+    cd ${GENSENPATH}/data/models
+   chmod +x download_models.sh && ./download_models.sh
+    ```
+    
+    - Edit `vqa_experiments/clevr/extract_question_features_clevr.py`, changing the `DATA_PATH` variable to point to CLEVR dataset and `GENSEN_PATH` to point to gensen repository and extract features:
+    `python vqa_experiments/clevr/extract_question_features_clevr.py`
+    
+    - Pre-process the CLEVR questions
+    Edit `$PATH` variable in `vqa_experiments/clevr/preprocess_clevr.py` file, pointing it to the directory where CLEVR was extracted
+    
+3. Extract image features, train PQ encoder and extract encoded features 
+    - Extract image features: `python -u vqa_experiments/clevr/extract_image_features_clevr.py --path /path/to/CLEVR`
+    - In `pq_encoding_clevr.py`, change the value of `PATH` and `streaming_type` (as either 'iid' or 'qtype')
+    - Train PQ encoder and extract features: `python vqa_experiments/clevr/pq_encoding_clevr.py`
+
+### Training REMIND on TDIUC
 
 ## Citation
 If using this code, please cite our paper.
