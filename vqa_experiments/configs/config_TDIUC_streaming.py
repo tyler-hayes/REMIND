@@ -12,38 +12,33 @@ from vqa_experiments.s_mac import s_mac
 # weights so that it is easy to reproduce later.
 
 # Data
-data_path = '/hdd/robik/CLEVR'
-dataset = 'clevr'
-img_feat = 'resnet'  # updn, resnet, updnmkii, resnetmkii
+data_path = '/hdd/robik/TDIUC'
+dataset = 'tdiuc'
+img_feat = 'resnetpq_iid'  # updn, resnet, updnmkii, resnetmkii
 mkii = False  # If you want to also load codebook indices
 data_subset = 1.0
-d = Dictionary.load_from_file('vqa_experiments/data/dictionary_{}.pkl'.format(dataset))
+d = Dictionary.load_from_file(f'vqa_experiments/data/dictionary_{dataset}.pkl')
 
-map_path = f'{data_path}/map_clevr_resnet_largestage3.json'
+map_path = f'{data_path}/map_tdiuc_resnet.json'
 
 train_file = f'{data_path}/train_{dataset}.h5'
 val_file = f'{data_path}/val_{dataset}.h5'
 
-train_batch_size = 64
-val_batch_size = 64
-num_classes = 28  # Number of classifier units 1480 for TDIUC, 31xx for VQA,28 for CLEVR
+train_batch_size = 512
+val_batch_size = 512
+num_classes = 1480  # Number of classifier units 1480 for TDIUC, 31xx for VQA,28 for CLEVR
 
 train_on = 'full'
 test_on = 'full'  # 'full' or 'valid'
 
 arrangement = dict()
 
-# How many to train/test on
-# How many of "indices" to train on, E.g., if arrangement is ans_class, it refers
-# to how many answer classes to use, if arrangement is ques_type, it refers to how
-# many question_types to use -1 means all possible
-
 only_first_k = dict()
 only_first_k['train'] = sys.maxsize  # Use sys.maxsize to load all
 only_first_k['val'] = sys.maxsize  # Use sys.maxsize to load all
 
 qnorm = True  # Normalize ques feat?
-imnorm = False  # Normalize img feat?
+imnorm = True  # Normalize img feat?
 
 shuffle = False
 
@@ -72,16 +67,14 @@ bidirectional = True
 lstm_out = 512
 emb_dim = 300
 cnn_feat_size = 2048  # 2048 for resnet/updn/clevr_layer4 ; 1024 for clevr layer_3
-if dataset == 'clevr':
-    cnn_feat_size = 1024
 
 classfier_dropout = True
-embedding_dropout = False
+embedding_dropout = True
 attention_dropout = True
 num_hidden = 1024
-use_model = s_mac.sMacNetwork  # BLAH
+use_model = vqa_models.UpDown  # BLAH
 optimizer = torch.optim.Adamax
-lr = 3e-4
+lr = 2e-3
 save_models = False
 if not soft_targets:
     train_on = 'valid'

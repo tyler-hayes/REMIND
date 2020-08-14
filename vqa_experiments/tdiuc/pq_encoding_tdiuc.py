@@ -6,21 +6,23 @@ import numpy as np
 import h5py
 import json
 
+print("Starting the encoding process...")
 # Change these based on data set
-PATH = '/hdd/robik/CLEVR'  # Change this
-streaming_type = 'iid'  # Change this
+PATH = '/hdd/robik/TDIUC'  # Change this
+streaming_type = 'qtype'  # Change this
 
-feat_name = f'{PATH}/all_clevr_resnet_largestage3'
-train_filename = f'{PATH}/train_clevr.h5'
-lut_name = f'{PATH}/map_clevr_resnet_largestage3.json'
+# Probably don't need to be changed
+feat_name = f'{PATH}/all_tdiuc_resnet'
+train_filename = f'{PATH}/train_tdiuc.h5'
+lut_name = f'{PATH}/map_tdiuc_resnet.json'
 
-feat_dim = 1024
-num_feat_maps = 196
+feat_dim = 2048
+num_feat_maps = 49
 
 train_data = h5py.File(train_filename, 'r')
 lut = json.load(open(lut_name))
 feat_h5 = h5py.File(f'{feat_name}.h5', 'r')
-print(f"# images {len(feat_h5['image_features'])}")
+
 if streaming_type == 'iid':
     ids = train_data['iid'][:]
     feat_idxs = list(set([lut['image_id_to_ix'][str(id)] for id in ids]))
@@ -28,10 +30,12 @@ if streaming_type == 'iid':
 else:
     feat_idxs_base_init = list(set([lut['image_id_to_ix'][str(iid)] for qtypeidx, iid in
                                     zip(train_data['qtypeidx'], train_data['iid']) if qtypeidx == 0]))
-print(f'len feat_idxs_base_init {len(feat_idxs_base_init)}')
+
+print(f"# samples for base init {len(feat_idxs_base_init)}")
 train_data_base_init = np.array([feat_h5['image_features'][bidx] for bidx in feat_idxs_base_init], dtype=np.float32)
 
 # train set
+
 train_data_base_init = np.reshape(train_data_base_init, (-1, feat_dim))
 
 print('Training Product Quantizer')
@@ -42,7 +46,7 @@ pq = faiss.ProductQuantizer(d, cs, 8)
 pq.train(train_data_base_init)
 
 print('Encoding, Decoding and saving Reconstructed Features')
-del train_data_base_init
+
 feats = feat_h5['image_features']
 start = 0
 batch = 10000
@@ -62,4 +66,4 @@ while start < len(feats):
 
 reconstructed_h5.close()
 
-# boundary points: [251749, 377403, 542809, 605903, 699989]
+# Boundary points: [21602, 463412, 575269, 821512, 840988, 903850, 905311, 905661, 950335, 976377, 982225, 1115299]

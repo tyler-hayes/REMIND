@@ -100,6 +100,16 @@ We save out incremental weights and associated data for REMIND after each evalua
 3. Run `run_imagenet_experiment.sh`
 
 ## Training REMIND on VQA Datasets
+We use the gensen library for question features. Execute the following steps to set it up:
+```
+cd ${GENSENPATH} 
+git clone git@github.com:erobic/gensen.git
+cd ${GENSENPATH}/data/embedding
+chmod +x glove25.sh && ./glove2h5.sh    
+cd ${GENSENPATH}/data/models
+chmod +x download_models.sh && ./download_models.sh
+```
+
 ### Training REMIND on CLEVR 
 _Note: For convenience, we pre-extract all the features including the PQ encoded features. This requires 140 GB of free space._
 1. Download and extract CLEVR images+annotations:
@@ -130,7 +140,34 @@ _Note: For convenience, we pre-extract all the features including the PQ encoded
     - In `pq_encoding_clevr.py`, change the value of `PATH` and `streaming_type` (as either 'iid' or 'qtype')
     - Train PQ encoder and extract features: `python vqa_experiments/clevr/pq_encoding_clevr.py`
 
+4. Train REMIND
+    - Edit `data_path` in `vqa_experiments/configs/config_CLEVR_streaming.py`
+    - Run `./vqa_experiments/run_clevr_experiment.sh` (Set `DATA_ORDER` to either `qtype` or `iid` to define the data order)
+
 ### Training REMIND on TDIUC
+1. Download TDIUC
+    ```
+    cd ${TDIUC_PATH}
+    wget https://kushalkafle.com/data/TDIUC.zip && unzip TDIUC.zip
+    cd TDIUC && python setup.py --download Y # You may need to change print '' statements to print('')
+    ```
+   
+2. Extract question features    
+    - Edit `vqa_experiments/clevr/extract_question_features_tdiuc.py`, changing the `DATA_PATH` variable to point to TDIUC dataset and `GENSEN_PATH` to point to gensen repository and extract features:
+    `python vqa_experiments/tdiuc/extract_question_features_tdiuc.py`
+    
+    - Pre-process the TDIUC questions
+    Edit `$PATH` variable in `vqa_experiments/clevr/preprocess_tdiuc.py` file, pointing it to the directory where TDIUC was extracted
+    
+3. Extract image features, train PQ encoder and extract encoded features 
+    - Extract image features: `python -u vqa_experiments/tdiuc/extract_image_features_tdiuc.py --path /path/to/TDIUC`
+    - In `pq_encoding_tdiuc.py`, change the value of `PATH` and `streaming_type` (as either 'iid' or 'qtype')
+    - Train PQ encoder and extract features: `python vqa_experiments/clevr/pq_encoding_clevr.py`
+    
+4. Train REMIND
+    - Edit `data_path` in `vqa_experiments/configs/config_TDIUC_streaming.py`
+    - Run `./vqa_experiments/run_tdiuc_experiment.sh` (Set `DATA_ORDER` to either `qtype` or `iid` to define the data order)
+
 
 ## Citation
 If using this code, please cite our paper.

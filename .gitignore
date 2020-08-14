@@ -1,0 +1,6 @@
+# Default ignored files
+/workspace.xml
+logs/
+vqa_experiments/__pycache__
+snapshots
+*__pycache__

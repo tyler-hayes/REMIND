@@ -379,12 +379,18 @@ def exponential_averaging(model1, model2, decay=0.999):
 
 # %%
 def main():
-    config.image_stage = f'largestage3pq_{args.data_order}'  # stage3 or stage4 if clevr is used
-
-    config.feat_path = f'{config.data_path}/all_clevr_resnet_{config.image_stage}.h5'
+    if config.dataset == 'clevr':
+        config.feat_path = f'{config.data_path}/all_clevr_resnet_largestage3pq_{args.data_order}.h5'
+    else:
+        config.feat_path = f'{config.data_path}/all_tdiuc_resnetpq_{args.data_order}.h5'
 
     config.expt_dir = 'snapshots/' + args.expt_name
     config.use_exponential_averaging = args.use_exponential_averaging
+    config.data_order = args.data_order
+    if config.data_order == 'iid':
+        config.arrangement = {'train': 'random', 'val': 'random'}
+    else:
+        config.arrangement = {'train': 'qtypeidx', 'val': 'qtypeidx'}
     if not config.overwrite_expt_dir:
         assert_expt_name_not_present(
             config.expt_dir)  # Just comment it out during dev phase, otherwise it can get annoying
@@ -458,6 +464,7 @@ def main():
         if config.use_exponential_averaging:
             exponential_averaging(net_running, net, 0)
 
+        print(json.dumps(args.__dict__, indent=4, sort_keys=True))
         shutil.copy('vqa_experiments/configs/config_' + args.config_name + '.py',
                     os.path.join(config.expt_dir, 'config_' + args.config_name + '.py'))
 
