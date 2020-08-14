@@ -111,7 +111,7 @@ chmod +x download_models.sh && ./download_models.sh
 ```
 
 ### Training REMIND on CLEVR 
-_Note: For convenience, we pre-extract all the features including the PQ encoded features. This requires 140 GB of free space._
+_Note: For convenience, we pre-extract all the features including the PQ encoded features. This requires 140 GB of free space, assuming images are deleted after feature extraction._
 1. Download and extract CLEVR images+annotations:
     ```bash
     wget https://dl.fbaipublicfiles.com/clevr/CLEVR_v1.0.zip
@@ -145,6 +145,7 @@ _Note: For convenience, we pre-extract all the features including the PQ encoded
     - Run `./vqa_experiments/run_clevr_experiment.sh` (Set `DATA_ORDER` to either `qtype` or `iid` to define the data order)
 
 ### Training REMIND on TDIUC
+_Note: For convenience, we pre-extract all the features including the PQ encoded features. This requires around 170 GB of free space, assuming images are deleted after feature extraction._
 1. Download TDIUC
     ```
     cd ${TDIUC_PATH}
