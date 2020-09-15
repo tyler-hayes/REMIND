@@ -93,8 +93,8 @@ def fit_pq(feats_base_init, labels_base_init, item_ix_base_init, num_channels, s
     rehearsal_ixs = []
     mb = min(batch_size, num_samples)
     for i in range(0, num_samples, mb):
-        start = min(i, num_samples - mb)
-        end = start + mb
+        start = i
+        end = min(start + mb, num_samples)
         data_batch = feats_base_init[start:end]
         batch_labels = labels_base_init[start:end]
         batch_item_ixs = item_ix_base_init[start:end]
