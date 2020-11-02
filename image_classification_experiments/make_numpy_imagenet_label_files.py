@@ -49,10 +49,10 @@ def main():
     with open(args.class_order_text_file) as f:
         lines = [line.rstrip() for line in f]  # grab each class name from line in text file
 
-    # compute mapping from user order to default pytorch order
+    # compute mapping from default pytorch order to user order
     map = []
-    for v in lines:
-        ix = default_class_order.index(v)
+    for v in default_class_order:
+        ix = lines.index(v)
         map.append(ix)
 
     # relabel all samples and save to numpy files
