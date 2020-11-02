@@ -9,6 +9,10 @@ Formally, REMIND takes an input image and passes it through frozen layers of a n
 ![REMIND](./repo_images/REMIND_model.png)
 
 ## Dependencies 
+
+:warning::warning: | For unknown reasons, our code does not reproduce results in PyTorch versions greater than PyTorch 1.3.1. Please follow our instructions below to ensure reproducibility.
+:---: | :---
+
 We have tested the code with the following packages and versions:
 - Python 3.7.6
 - PyTorch (GPU) 1.3.1
