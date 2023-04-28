@@ -10,7 +10,7 @@ Formally, REMIND takes an input image and passes it through frozen layers of a n
 
 ## Dependencies 
 
-:warning::warning: | For unknown reasons, our code does not reproduce results in PyTorch versions greater than PyTorch 1.3.1. Please follow our instructions below to ensure reproducibility.
+:warning::warning: | Our original code does not reproduce results in PyTorch versions greater than PyTorch 1.3.1. Please follow our instructions below to ensure reproducibility. If a newer version of PyTorch is desired, please use the code from [this pull request](https://github.com/tyler-hayes/REMIND/pull/6) for reproducing results in PyTorch 1.12.1.
 :---: | :---
 
 We have tested the code with the following packages and versions:
