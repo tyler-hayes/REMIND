@@ -51,16 +51,17 @@ class REMINDModel(object):
         self.classifier_G = ModelWrapper(core_model, output_layer_names=[extract_features_from], return_single=True)
 
         # make the optimizer
-        trainable_params = self.get_trainable_params(self.classifier_F, start_lr)
-        self.optimizer = optim.SGD(trainable_params, momentum=0.9, weight_decay=weight_decay)
+        self.optimizer = optim.SGD(self.classifier_F.parameters(), lr= start_lr, momentum=0.9, weight_decay=weight_decay)
 
         # setup lr decay
         if lr_mode in ['step_lr_per_class']:
             self.lr_scheduler_per_class = {}
+            self.lr_per_class = {}
             for class_ix in range(0, num_classes):
                 self.lr_scheduler_per_class[class_ix] = optim.lr_scheduler.StepLR(self.optimizer,
                                                                                   step_size=lr_step_size,
                                                                                   gamma=lr_gamma)
+                self.lr_per_class[class_ix] = start_lr
         else:
             self.lr_scheduler_per_class = None
 
@@ -131,6 +132,7 @@ class REMINDModel(object):
             for x, y, item_ix in zip(codes, batch_labels, batch_item_ixs):
                 if self.lr_mode == 'step_lr_per_class' and (ongoing_class is None or ongoing_class != y):
                     ongoing_class = y
+                    self.optimizer.param_groups[0]['lr'] = self.lr_per_class[int(y)]
 
                 if self.use_mixup:
                     # gather two batches of previous data for mixup and replay
@@ -256,6 +258,7 @@ class REMINDModel(object):
                 # update lr scheduler
                 if self.lr_scheduler_per_class is not None:
                     self.lr_scheduler_per_class[int(y)].step()
+                    self.lr_per_class[int(y)] = self.optimizer.param_groups[0]['lr']
 
     def mixup_data(self, x1, y1, x2, y2, alpha=1.0):
         if alpha > 0:
