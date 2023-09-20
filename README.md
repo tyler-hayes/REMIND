@@ -10,27 +10,24 @@ Formally, REMIND takes an input image and passes it through frozen layers of a n
 
 ## Dependencies 
 
-:warning::warning: | For unknown reasons, our code does not reproduce results in PyTorch versions greater than PyTorch 1.3.1. Please follow our instructions below to ensure reproducibility.
-:---: | :---
-
 We have tested the code with the following packages and versions:
-- Python 3.7.6
-- PyTorch (GPU) 1.3.1
-- torchvision 0.4.2
-- NumPy 1.18.5
+- Python 3.8.13
+- PyTorch (GPU) 1.12.1
+- torchvision 0.13.1
+- NumPy 1.21.5
 - FAISS (CPU) 1.5.2
-- CUDA 10.1 (also works with CUDA 10.0)
-- Scikit-Learn 0.23.1
-- Scipy 1.1.0
+- CUDA 10.2 (also works with CUDA 11.3)
+- Scikit-Learn 1.0.2
+- Scipy 1.7.3
 - NVIDIA GPU
 
 
 We recommend setting up a `conda` environment with these same package versions:
 ```
-conda create -n remind_proj python=3.7
+conda create -n remind_proj python=3.8
 conda activate remind_proj
-conda install numpy=1.18.5
-conda install pytorch=1.3.1 torchvision=0.4.2 cudatoolkit=10.1 -c pytorch
+conda install numpy=1.21.5
+conda install pytorch=1.12.1 torchvision=0.13.1 cudatoolkit=10.2 -c pytorch
 conda install faiss-cpu=1.5.2 -c pytorch
 ```
 
